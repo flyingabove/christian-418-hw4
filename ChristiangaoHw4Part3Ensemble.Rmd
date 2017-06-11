@@ -1,0 +1,10 @@
+---
+title: "Ensemble Methods"
+author: "ChristianGao"
+date: "June 11, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```

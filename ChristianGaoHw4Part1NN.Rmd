@@ -1,21 +1,52 @@
+---
+title: "ChristianGao418Hw4"
+author: "Christian Gao"
+date: "6/7/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Sentiment Analysis Using Neural Networks
+
+#Data Cleaning
+We start by cleaning the raw tweets. In addition to removing many symbols and capitalization from the previous study, we furthur simplify by removing all consecutive duplicate characters as well as remove any non ASCII characters. this is to limit the number of possible factors so its easier to train a model.
+
+
+```{r cleaning raw data, echo = TRUE , message=FALSE}
 library(keras)
 library(magrittr)
 library(data.table)
 library(sfsmisc)
 
-###Cleaning###
 sentiment_df<-fread("data/sentiment_raw.csv")
 sentiment_df<-sentiment_df[1:10000]
 sentiment_df$ascii<-iconv(sentiment_df$JustText, "latin1", "ASCII", sub="")
 sentiment_df$no_repeats<-gsub("([[:alpha:]])\\1{2,}", "\\1", sentiment_df$ascii)
 sentiment_df$no_repeats<-gsub("(?<=[\\s])\\s*|^\\s+|\\s+$","",perl=TRUE,sentiment_df$no_repeats)
 sentiment_df<-sentiment_df[sapply(gregexpr("\\W+", sentiment_df$no_repeats), length) >1,]
+```
 
+### Finding All Unique words for features
+
+We then use unix command to order aggregate a list of all unique words and then read that back into R.
+
+```{r unique words, echo= TRUE, message=FALSE}
 sentiment_df_small<-sentiment_df
 writeLines(sentiment_df_small$no_repeats,"data/smalltest.txt")
-system("grep -o -E '\\w+' smalltest.txt | sort -u -f > wordlist.txt")
-factor_list<-factor(readLines("data/wordList.txt"))
+system("grep -o -E '\\w+' data/smalltest.txt | sort -u -f > data/wordlist.txt")
+factor_list<-factor(readLines(con="./data/wordlist.txt"))
 text_raw_list<-strsplit(sentiment_df_small$no_repeats,split = " ")
+
+```
+
+### Substituting All Words for Their Corresponding Factor Level To Input Into NN
+
+We take the list of unique words and convert them to factors. We then go through our training data and associate each word with its correspoding factor. For example a sentence such as "The dog ate the cat" would map to [3,68,124,3,473]. These factor level are going to be the inputs for the first layer of the neural network.
+
+```{r factor substitution, echo = FALSE , message=FALSE, include = FALSE}
 
 get_training<-function(string_in,levels){
   y2<-factor(string_in,levels = levels); 
@@ -36,10 +67,18 @@ x_test <- nn_predictors[-training_index]
 y_train<- sentiment_df_small$Sentiment[training_index]
 y_test <- sentiment_df_small$Sentiment[-training_index]
 
-### Test and Train ###
+cat("Training Set Response Example:")
+head(y_train,2)
+cat("Training Set Predictor Example:")
+head(x_train,2)
 
+```
+
+###Training The Neural Network
+
+```{r nn training, echo = FALSE , message=FALSE, include=FALSE, cache=FALSE}
 max_features <- length(factor_list)
-maxlen <- 80  # cut texts after this number of words 
+maxlen <- 40  # cut texts after this number of words
 batch_size <- 128
 
 print('Loading data...\n')
@@ -53,36 +92,39 @@ cat('x_train shape:', dim(x_train), '\n')
 cat('x_test shape:', dim(x_test), '\n')
 
 print('Build model...\n')
-model <- keras_model_sequential()
-model %>%
-  layer_embedding(input_dim = max_features, output_dim = 128) %>% 
-  layer_lstm(units = 64, dropout = 0.2, recurrent_dropout = 0.2) %>% 
-  layer_dense(units = 1, activation = 'sigmoid')
-
-#Model Settings
-model %>% compile(
-  loss = 'binary_crossentropy',
-  optimizer = 'adam',
-  metrics = c('accuracy')
-)
-
+# model <- keras_model_sequential()
+# model %>%
+#   layer_embedding(input_dim = max_features, output_dim = 128) %>%
+#   layer_lstm(units = 64, dropout = 0.2, recurrent_dropout = 0.2) %>%
+#   layer_dense(units = 1, activation = 'sigmoid')
+# 
+# #Model Settings
+# model %>% compile(
+#   loss = 'binary_crossentropy',
+#   optimizer = 'adam',
+#   metrics = c('accuracy')
+# )
+# 
 print('Train...\n')
-model %>% fit(
-  x_train, y_train,
-  batch_size = batch_size,
-  epochs = 1,
-  validation_data = list(x_test, y_test)
-)
-
-save_model_hdf5(model, filepath = "data/nn_small_model", overwrite = TRUE,
-                include_optimizer = TRUE)
-
-model<-load_model_hdf5(filepath="data/nn_small_model")
-
+# model %>% fit(
+#   x_train, y_train,
+#   batch_size = batch_size,
+#   epochs = 1,
+#   validation_data = list(x_test, y_test)
+# )
+# save_model_hdf5(model, filepath = "data/nn_small_model", overwrite = TRUE,
+#                 include_optimizer = TRUE)
+# 
+model<-load_model_hdf5(filepath="data/nn_small_model",custom = NULL)
+# 
 scores <- model %>% evaluate(
   x_test, y_test,
   batch_size = batch_size
 )
+```
+###Results
+
+```{r nn results, echo = FALSE , message=FALSE}
 
 #Results
 
@@ -137,6 +179,12 @@ generate_auc<-function(probs,predictionsm,dens){
 #
 auc<-generate_auc(probs,predictions,.001)
 
-cat("FINAL AUC: " +auc)
+cat("FINAL AUC: " ,auc)
+
+```
+
+###Conclusions For Neural Network
+
+Looking at the final results, we can see that the neural network was able to out perform the GBM with its self generated features. We also observe that the neural network tends to do very well with positive tweets while GBM tends to do very well with negative tweets. We also note that since the Neural network was done on a GPU with a smaller dataset, the training time was alot faster. Perhapes next we we shall try an ensemble method to combine the two results into one model. 
 
 
