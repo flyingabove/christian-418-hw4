@@ -75,5 +75,5 @@ scores <- model %>% evaluate(
   batch_size = batch_size
 )
 
-print('Test score:', scores[[1]])
-print('Test accuracy', scores[[2]])
+cat('Test score:', scores[[1]])
+cat('Test accuracy', scores[[2]])
