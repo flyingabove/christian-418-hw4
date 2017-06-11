@@ -8,6 +8,7 @@ library(h2o)
 ###############
 
 ###GBM- H2o###
+
 h2o.init(nthreads = -1)
 df <- h2o.importFile(path="/home/christian/Documents/christian-418-hw4/data/sentiment_df-gbm.csv")
 
