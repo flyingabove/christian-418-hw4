@@ -9,7 +9,7 @@ library(h2o)
 
 ###GBM- H2o###
 h2o.init(nthreads = -1)
-df <- h2o.importFile(path="/Users/christiangao/Documents/MAS/418/Hw4/data/sentiment_df-gbm.csv")
+df <- h2o.importFile(path="/home/christian/Documents/christian-418-hw4/data/sentiment_df-gbm.csv")
 
 splits <- h2o.splitFrame(
   df,           ##  splitting the H2O frame we read above
@@ -71,7 +71,7 @@ gbm_grid <- h2o.grid(algorithm = "gbm",
                      
                      stopping_rounds = 2,
                      stopping_tolerance = 1e-3,
-                     stopping_metric = "MSE",
+                     stopping_metric = "ROC",
                      
                      # how often to score (affects early stopping):
                      score_tree_interval = 100, 
