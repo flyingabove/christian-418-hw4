@@ -1,31 +1,50 @@
-##############################
-#HW 3 Christian Gao- Modeling#
-##############################
-library(h2o)
+---
+title: "GBM Optimization"
+author: "ChristianGao"
+date: "June 10, 2017"
+output: html_document
+---
 
-###############
-##### GBM #####
-###############
+##Sentiment Analysis Using GBM Hyper Parameter Tuning
+
+###Description
+In this section we will use hyper parameter tuning to find the optimal model for gbm.
+
+###Base Model
+
+This is the base model so that we have a benchmark to compare to.
+
+```{r data loading training base, echo = FALSE , message=FALSE, include=FALSE, cache=FALSE}
+library(h2o)
 
 ###GBM- H2o###
 
-h2o.init(nthreads = -1,min_mem_size = "1g")
+h2o.init(nthreads = -1, min_mem_size = "12g")
 df <- h2o.importFile(path="/home/christian/Documents/christian-418-hw4/data/sentiment_df-gbm.csv")
 
 splits <- h2o.splitFrame(
   df,           ##  splitting the H2O frame we read above
-  ratios = c(.1,.05),   ##  create splits 
-  seed=1234)    
-
-train <- h2o.assign(splits[[1]], "train.hex")   
+  ratios = c(.1,.05),   ##  create splits
+  seed=1234)
+train <- h2o.assign(splits[[1]], "train.hex")
 valid <- h2o.assign(splits[[2]], "valid.hex")
+gbm_base<-h2o.gbm(y = "Sentiment", training_frame = train,seed = 123)
 
+```
+
+```{r Hyper Parameter Base, echo = FALSE, message=FALSE, plot = TRUE}
 ###GBM Base Model###
-
-gbm_base<-h2o.gbm(y = "Sentiment", training_frame = train)
-gbm_base
-h2o.auc(h2o.performance(gbm_base, newdata = valid))
+cat("Time Taken: ")
+system.time(h2o.auc(h2o.performance(gbm_base, newdata = valid)))
+cat("AUC: ")
 plot(h2o.performance(gbm_base, newdata = valid),col = "blue",main = "True Positives vs False Positives GBM")
+```
+
+As you can see, the base model gives an AUC of 76.5\%. Although fast, this model does not seem to provide the performance we want.
+
+###Using Hyper Parameter Tuning
+
+```{r hyper parameter tuning, echo = FALSE, message=FALSE, include=FALSE}
 
 ###GBM with hyper parameter tuning###
 
@@ -57,7 +76,7 @@ search_criteria = list(strategy = "RandomDiscrete",
                        stopping_tolerance = 0.00001, 
                        stopping_rounds = 5, 
                        seed = 123456)
-
+cat("Time Taken: ")
 system.time(
 gbm_grid <- h2o.grid(algorithm = "gbm", 
                      grid_id = "mygrid",
@@ -84,14 +103,25 @@ gbm_grid <- h2o.grid(algorithm = "gbm",
                      hyper_params = hyper_params,
                      search_criteria = search_criteria)
 )
+```
+
+Compared to the base run, this run takes a much longer time.
+
+```{r hyper parameter 2,echo = FALSE, message=FALSE}
 
 gbm_sorted_grid <- h2o.getGrid(grid_id = "mygrid", sort_by = "auc")
+cat("List of Models: ")
 print(gbm_sorted_grid)
 
 best_model <- h2o.getModel(gbm_sorted_grid@model_ids[[1]])
 summary(best_model)
 
-h2o.auc(h2o.performance(best_model, newdata = valid))
 plot(h2o.performance(best_model, newdata = valid),col = "blue",main = "True Positives vs False Positives GBM")
 
 h2o.shutdown()
+```
+
+From these results we can see that even though the model ran for a long time, we did not get that much change in AUC. We can also see that many of our custom generated features such as emoji count we not verry effective. Perhapes the neural network approach with custom generated features is more useful for sentiment analysis. 
+
+
+
