@@ -9,7 +9,7 @@ library(h2o)
 
 ###GBM- H2o###
 
-h2o.init(nthreads = -1,min_mem_size = "1g")
+h2o.init(nthreads = -1,min_mem_size = "12g")
 df <- h2o.importFile(path="/home/christian/Documents/christian-418-hw4/data/sentiment_df-gbm.csv")
 
 splits <- h2o.splitFrame(
