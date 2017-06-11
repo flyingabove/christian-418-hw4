@@ -48,7 +48,7 @@ As you can see, the base model gives an AUC of 76.5\%. Although fast, this model
 
 ###GBM with hyper parameter tuning###
 
-ntrees_opts = c(300,400,1000,1500,3000)       # early stopping will stop earlier
+ntrees_opts = c(1000,1500,3000)       # early stopping will stop earlier
 max_depth_opts = seq(1,20)
 #min_rows_opts = c(1,5,10,20,50,100)
 learn_rate_opts = seq(0.001,0.02,0.001)
@@ -109,7 +109,7 @@ Compared to the base run, this run takes a much longer time.
 
 ```{r hyper parameter 2,echo = FALSE, message=FALSE}
 
-gbm_sorted_grid <- h2o.getGrid(grid_id = "mygrid", sort_by = "auc")
+gbm_sorted_grid <- h2o.getGrid(grid_id = "mygrid", sort_by = "auc",decreasing = TRUE)
 cat("List of Models: ")
 print(gbm_sorted_grid)
 
@@ -118,10 +118,13 @@ summary(best_model)
 
 plot(h2o.performance(best_model, newdata = valid),col = "blue",main = "True Positives vs False Positives GBM")
 
+```
+
+```{r shutdow, echo = FALSE , message=FALSE, include=FALSE, cache=FALSE}
 h2o.shutdown()
 ```
 
-From these results we can see that even though the model ran for a long time, we did not get that much change in AUC. We can also see that many of our custom generated features such as emoji count we not verry effective. Perhapes the neural network approach with custom generated features is more useful for sentiment analysis. 
+  From these results we can see that even though the model ran for a long time, we did not get that much change in AUC. We can also see that many of our custom generated features such as emoji count we not verry effective. Perhapes the neural network approach with custom generated features is more useful for sentiment analysis. 
 
 
 

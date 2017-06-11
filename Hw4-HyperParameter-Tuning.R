@@ -29,7 +29,7 @@ plot(h2o.performance(gbm_base, newdata = valid),col = "blue",main = "True Positi
 
 ###GBM with hyper parameter tuning###
 
-ntrees_opts = c(300,400,1000,1500,3000)       # early stopping will stop earlier
+ntrees_opts = c(1000,1500,3000)       # early stopping will stop earlier
 max_depth_opts = seq(1,20)
 #min_rows_opts = c(1,5,10,20,50,100)
 learn_rate_opts = seq(0.001,0.02,0.001)
@@ -85,7 +85,7 @@ gbm_grid <- h2o.grid(algorithm = "gbm",
                      search_criteria = search_criteria)
 )
 
-gbm_sorted_grid <- h2o.getGrid(grid_id = "mygrid", sort_by = "auc")
+gbm_sorted_grid <- h2o.getGrid(grid_id = "mygrid", sort_by = "auc",decreasing = TRUE)
 print(gbm_sorted_grid)
 
 best_model <- h2o.getModel(gbm_sorted_grid@model_ids[[1]])
